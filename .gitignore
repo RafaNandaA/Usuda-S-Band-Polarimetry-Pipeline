@@ -1,0 +1,18 @@
+# data and outputs stay out of the repository
+*.raw
+*.h5
+*.hdf5
+*.npy
+*.npz
+data/
+output/
+outputs/
+results/
+# Python and Julia caches
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+# editor and OS files
+.DS_Store
+.vscode/
+.idea/

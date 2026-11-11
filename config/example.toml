@@ -1,0 +1,93 @@
+# Example configuration for one observation. Copy this file, edit the paths, and pass the copy to every stage.
+# Relative paths are read relative to the directory of this file.
+
+[paths]
+raw_file = "../data/raw/UsdSRL_2026043080000.raw"   # raw 4-bit voltages (read only)
+detlist_R = "../data/20260212_Crab_RHCP_Usuda2GHzBW32MHz4bit4ch_CH1234_Integ10us_SNth5.dat"
+detlist_L = "../data/20260212_Crab_LHCP_Usuda2GHzBW32MHz4bit4ch_CH1234_Integ10us_SNth5.dat"
+work_dir = "../work"                 # item list, per-window uncalibrated store, fold blocks, nebula snapshots
+nebula_file = "../work/nebula_snapshots.h5"        # off-pulse nebula coherency snapshots (calibrator)
+gain_step_file = "../work/nebula_gain_step_1s.h5"  # 1-s nebula snapshots around the R-chain gain step
+tables_dir = "../work/tables"        # calibration tables written by calibrate/fit.py and read by calibrate/apply.jl
+readtime_tables_dir = ""             # tables applied while reading (only for the reference rows), empty = tables_dir if it exists, else no-op tables
+gim_file = "../data/gim/COD0OPSFIN_20260430000_01D_01H_GIM.INX.gz"   # CODE final global ionosphere map for the observing day
+products_dir = "../products"         # calibrated catalogue, per-channel catalogue and fold product
+analysis_dir = "../analysis_out"     # NUMBERS.json and the run log of the analysis
+figures_dir = "../figures_out"
+
+[observation]
+date = 2026-02-12
+source = "Crab"
+sample_rate_MHz = 64.0               # real sampling per subband, so each subband is 32 MHz wide
+subband_lower_MHz = [2194.0, 2226.0, 2258.0, 2290.0]   # four contiguous 32 MHz subbands, 2194-2322 MHz
+site_lat_deg = 36.1317               # Usuda 64-m antenna
+site_lon_deg = 138.3650
+
+[dedispersion]
+dm = 56.7094                         # pc cm^-3, measured on this track from band-split timing of bright pulses
+ref_freq_MHz = 2322.0                # top of the band, so all subbands share one arrival time
+
+[channeliser]
+m_chan = 64                          # 64-point FFT of the real signal gives 32 channels of 1 MHz per subband
+n_ave = 1                            # no time averaging, so samples are 1 us
+
+[aperture]
+read_ms = 20.0                       # length of the read around each listed pulse
+onpulse_nsig = 3.0                   # on-pulse run threshold at 1 us
+union_radius_us = 30                 # other 3-sigma runs within this distance of the main peak join the pulse
+union_peak_nsig = 5.0                # ... if their own 1-us peak reaches this many sigma
+baseline_fraction = 0.2              # baseline = first 20 % of the read
+span_pad_us = 70                     # stored dynamic spectrum = union aperture +- this margin
+raw_profile_half_us = 750            # calibrated band profile stored per pulse, +- this around the peak
+
+[selection]
+min_det_snr = 6.0                    # keep a listed pulse if max(S/N_R, S/N_L) >= this value
+
+[feed]
+alpha_el = -1.0                      # chi = q + alpha_el * El + gamma_az * Az, the feed room turns in azimuth and does not tip
+gamma_az = 0.0
+
+[delay]
+rl_delay_s = [-9.03e-8, -9.064e-8, -9.164e-8, -9.206e-8]   # R/L delay per subband, applied while reading as a phase ramp on L before channelisation
+
+[calibration]
+n_snapshots = 3000                   # nebula snapshots spread over the track
+step_sod = 29056.6                   # R-chain gain step (s of day, UTC), measured from the nebula
+n_bootstrap = 200                    # bootstrap draws for the D-term errors
+fast_gamma_knot_min = 20.0           # knot spacing of the band-common fast gain term
+
+[analysis]
+bootstrap = 20000                    # bootstrap draws for every interval
+
+[nebula_systematics]
+# Values passed to the analysis through inputs.json. They describe how well the nebula constrains two calibration terms.
+m_sigma_block19_QV = [0.0101, 0.0199, 0.0031, 0.0043]   # block-bootstrap sigma of the nebula m_QV per subband, 19-snapshot blocks (El > 65 deg)
+m_sigma_block19_UV = [0.0094, 0.0191, 0.0078, 0.0070]
+m_sigma_block95_QV = [0.0193, 0.0250, 0.0077, 0.0120]   # the same with 95-snapshot blocks
+m_sigma_block95_UV = [0.0162, 0.0316, 0.0224, 0.0215]
+gamma_az_free = 0.00703              # feed-model azimuth coefficient when it is fitted freely on the nebula (El > 0)
+gamma_az_free_sd = 0.00062           # its bootstrap sd (40 snapshot blocks)
+
+[timing]
+arrival_offset_ms = 12.2285          # median position of bright listed pulses in the read window, at 2322 MHz (from the window start)
+
+[flags]
+interference_interval_s = [40579.0, 40807.0]   # file-time interval with impulsive interference in R subbands 0-1 (flag bit 1)
+
+[nebula]
+off_phase = 0.7                      # snapshot rotation phase, far from the main pulse (0) and the interpulse (0.4)
+snapshot_words = 10000000            # 156 ms per snapshot
+stage1_crop = 128                    # samples dropped at each end of the stage-1 FFT, where the circular delay ramp wraps
+mask_pad_ms = 0.2                    # listed pulses are masked along their dispersed track, +- this margin
+gain_step_start_s = 29023            # first second of the 1-s snapshot series around the R-chain gain step (file time)
+gain_step_n = 80
+gain_step_segment_words = 4194304    # stage-1 FFT length for the 1-s snapshots
+
+[fold]
+n_rotations = 55000                  # rotations folded, spread over the track in proportion to block length
+block_s = 60.0                       # fold block length, and blocks are the unit of the bootstrap errors
+mp_centre_ms = 12.21502449288948     # centre of the mean main pulse in the read geometry, from a first fold
+lfip_phase_turn = 0.4033658145       # median list phase of the interpulse giant pulses
+off_offset_turn = 0.2                # off-pulse window, 0.2 turn after the main pulse
+gain_step_gap_s = [29054.0, 29061.0] # no fold rotation across the R-chain gain step
+list_gap_s = 30.0                    # rotations inside gaps of the merged lists longer than this cannot be labelled

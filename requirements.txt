@@ -1,0 +1,6 @@
+# Python 3.11 or later (tomllib). Tested with Python 3.14.
+numpy>=2.4
+scipy>=1.17
+h5py>=3.16
+matplotlib>=3.10
+ppigrf>=2.1        # IGRF field for the ionospheric Faraday rotation (calibrate/fit.py only)
